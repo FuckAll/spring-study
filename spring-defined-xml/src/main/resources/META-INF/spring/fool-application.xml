@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:fool="http://www.izgnod.xyz/schema/fool"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.izgnod.xyz/schema/fool http://www.izgnod.xyz/schema/fool/fool.xsd">
+
+    <fool:application name="application"/>
+    <fool:service name="service"/>
+</beans>
