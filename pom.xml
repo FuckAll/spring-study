@@ -9,6 +9,7 @@
     <version>0.0.1-SNAPSHOT</version>
     <modules>
         <module>spring-defined-xml</module>
+        <module>spring-jta-mybaits-durid</module>
     </modules>
     <name>spring-study</name>
     <description>Demo project for Spring Study</description>
