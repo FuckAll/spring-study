@@ -1,7 +1,6 @@
 server:
   port: 8077
 
-
 spring:
   application:
     name: jta-dbsource

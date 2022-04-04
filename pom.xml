@@ -10,6 +10,7 @@
     <modules>
         <module>spring-defined-xml</module>
         <module>spring-jta-mybaits-durid</module>
+        <module>spring-avtivemq</module>
     </modules>
     <name>spring-study</name>
     <description>Demo project for Spring Study</description>
