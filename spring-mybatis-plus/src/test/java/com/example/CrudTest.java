@@ -1,31 +1,38 @@
 package com.example;
 
-import com.baomidou.mybatisplus.core.conditions.Wrapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.dao.User;
+import com.example.dao.User2;
 import com.example.mapper.UserMapper;
+import com.example.mapper.UserMapper2;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @EnableTransactionManagement
 @SpringBootTest
+@ComponentScan("com.example")
 public class CrudTest {
-
     @Autowired
     private UserMapper userMapper;
-
-
+    @Autowired
+    private UserMapper2 userMapper2;
     @Autowired
     private A a;
-
     @Autowired
     private B b;
 
@@ -73,56 +80,58 @@ public class CrudTest {
 
 
     @Test
-    public void testInsert() {
-        User user = new User();
-        user.setName("小羊");
-        user.setAge(3);
-        user.setEmail("abc@mp.com");
-        assertThat(userMapper.insert(user)).isEqualTo(1);
-        System.out.println("userMapper.selectList(null) = " + userMapper.selectList(null));
-//        assertThat(user.getId()).isEqualTo(6L);
+    public void testOrderBy() {
+        final List<User> users = userMapper.selectList(new QueryWrapper<User>().orderByAsc("id"));
+        assertThat(users).isNotNull();
+        final List<User> users2 = userMapper.selectList(Wrappers.<User>lambdaQuery().orderByAsc(User::getId));
+        assertThat(users2).isNotNull();
     }
 
     @Test
-    public void testTransactional() {
-        try {
-            a.insertA();
-        } catch (Exception e) {
-            System.out.println("异常 = " + userMapper.selectList(null));
-        }
-
-        System.out.println("非异常 = " + userMapper.selectList(null));
+    public void testSelectMaps() {
+        List<Map<String, Object>> mapList = userMapper.selectMaps(Wrappers.<User>query().orderByAsc("age"));
+        assertThat(mapList).isNotEmpty();
+        assertThat(mapList.get(0)).isNotEmpty();
+        System.out.println(mapList.get(0));
     }
 
     @Test
-    public void testNo() {
-        a.insertA();
-        b.insertB();
+    public void selectMapsPage() {
+        IPage<Map<String, Object>> page = userMapper.selectMapsPage(new Page<>(0, 3), Wrappers.<User>query().orderByAsc("id"));
+        assertThat(page).isNotNull();
+        assertThat(page.getRecords()).isNotEmpty();
+        assertThat(page.getRecords().get(0)).isNotEmpty();
+
+        System.out.println(page.getRecords());
+        System.out.println(page.getTotal());
     }
 
+    @Test
+    public void selectMaxId() {
+        final User user = userMapper.selectOne(new QueryWrapper<>(new User()).select("max(id) as id"));
+        System.out.println("user = " + user);
+    }
 
-//    @Test
-//    public void testBatchUpdate() {
-//        System.out.println("------------ testBatchUpdate ----------");
-//        Assert.assertNotNull(userService);
-//        final List<User> users = Arrays.asList(
-//                User.builder().id(1L).age(99).build(),
-//                User.builder().id(2L).age(99).build(),
-//                User.builder().id(1L).age(99).build()
-//        );
-//        userService.updateBatchById(users);
-//        System.out.println("------------ testBatchUpdate success ----------");
-//
-//        final List<User> list = userService.lambdaQuery().in(User::getId, 1L, 2L, 3L).list();
-//        System.out.println("update result list = " + list);
-//    }
-//
-//    @Test
-//    public void bDelete() {
-//        final int i = userMapper.deleteById(3L);
-//        assertThat.
-//
-//
-//    }
+    @Test
+    public void testGroupBy() {
+        //1. QueryWrapper
+        final QueryWrapper<User> groupByAge = new QueryWrapper<User>().select("age , count(*) cnt").groupBy("age");
+        final List<Map<String, Object>> results = userMapper.selectMaps(groupByAge);
+        System.out.println("maps = " + results);
+        results.forEach(c -> System.out.println("c= " + c));
 
+        //3. LambdaQuery 没法用count
+        final LambdaQueryWrapper<User> userLambdaQueryWrapper = Wrappers.<User>lambdaQuery().select(User::getAge).groupBy(User::getId);
+        final List<Map<String, Object>> lists = userMapper.selectMaps(userLambdaQueryWrapper);
+        lists.forEach(c -> System.out.println("c = " + c));
+    }
+
+    @Test
+    public void testSqlCondition() {
+        Assertions.assertEquals(userMapper2.selectList(Wrappers.<User2>query()
+                .setEntity(new User2().setName("n"))).size(), 2);
+        Assertions.assertEquals(userMapper2.selectList(Wrappers.<User2>query().like("name", "J")).size(), 2);
+        Assertions.assertEquals(userMapper2.selectList(Wrappers.<User2>query().gt("age", 18)
+                .setEntity(new User2().setName("J"))).size(), 1);
+    }
 }
